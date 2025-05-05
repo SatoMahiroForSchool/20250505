@@ -39,8 +39,8 @@ function drawHandKeypoints() {
     for (let j of handKeypoints) {
       let keypoint = pose.keypoints[j];
 
-      // 只繪製置信度高於 0.2 的點
-      if (keypoint.score > 0.2) {
+      // 只繪製置信度高於 0.1 的點
+      if (keypoint.score > 0.1) {
         fill(0, 255, 0); // 綠色點
         noStroke();
         ellipse(keypoint.position.x, keypoint.position.y, 10, 10);
