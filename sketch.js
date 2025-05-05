@@ -25,21 +25,23 @@ function draw() {
   background(0);
   image(video, 0, 0, width, height);
 
-  // 繪製偵測到的關節點
-  drawKeypoints();
+  // 繪製偵測到的手部關節點
+  drawHandKeypoints();
 }
 
-function drawKeypoints() {
+function drawHandKeypoints() {
   for (let i = 0; i < poses.length; i++) {
     let pose = poses[i].pose;
 
-    // 遍歷所有關節點
-    for (let j = 0; j < pose.keypoints.length; j++) {
+    // 手部關節的索引 (左手: 9-10, 右手: 7-8)
+    const handKeypoints = [9, 10, 7, 8];
+
+    for (let j of handKeypoints) {
       let keypoint = pose.keypoints[j];
 
       // 只繪製置信度高於 0.2 的點
       if (keypoint.score > 0.2) {
-        fill(255, 0, 0);
+        fill(0, 255, 0); // 綠色點
         noStroke();
         ellipse(keypoint.position.x, keypoint.position.y, 10, 10);
       }
