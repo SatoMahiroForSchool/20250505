@@ -1,51 +1,51 @@
 let video;
-let poseNet;
-let poses = [];
+let handPose;
+let hands = [];
+
+function preload() {
+  // Initialize HandPose model with flipped video input
+  handPose = ml5.handPose({ flipped: true });
+}
+
+function mousePressed() {
+  console.log(hands);
+}
+
+function gotHands(results) {
+  hands = results;
+}
 
 function setup() {
   createCanvas(640, 480);
-
-  // 初始化攝影機
-  video = createCapture(VIDEO);
-  video.size(width, height);
+  video = createCapture(VIDEO, { flipped: true });
   video.hide();
 
-  // 初始化 PoseNet
-  poseNet = ml5.poseNet(video, modelLoaded);
-  poseNet.on('pose', function (results) {
-    poses = results;
-  });
-}
-
-function modelLoaded() {
-  console.log('PoseNet 已載入');
+  // Start detecting hands
+  handPose.detectStart(video, gotHands);
 }
 
 function draw() {
-  background(0);
-  image(video, 0, 0, width, height);
+  image(video, 0, 0);
 
-  // 繪製偵測到的手部關節點
-  drawHandKeypoints();
-}
+  // Ensure at least one hand is detected
+  if (hands.length > 0) {
+    for (let hand of hands) {
+      if (hand.confidence > 0.1) {
+        // Loop through keypoints and draw circles
+        for (let i = 0; i < hand.keypoints.length; i++) {
+          let keypoint = hand.keypoints[i];
 
-function drawHandKeypoints() {
-  for (let i = 0; i < poses.length; i++) {
-    let pose = poses[i].pose;
+          // Color-code based on left or right hand
+          if (hand.handedness == "Left") {
+            fill(255, 0, 255);
+          } else {
+            fill(255, 255, 0);
+          }
 
-    // 手部關節的索引 (左手: 9-10, 右手: 7-8)
-    const handKeypoints = [9, 10, 7, 8];
-
-    for (let j of handKeypoints) {
-      let keypoint = pose.keypoints[j];
-
-      // 只繪製置信度高於 0.1 的點
-      if (keypoint.score > 0.1) {
-        fill(0, 255, 0); // 綠色點
-        noStroke();
-        ellipse(keypoint.position.x, keypoint.position.y, 10, 10);
+          noStroke();
+          circle(keypoint.x, keypoint.y, 16);
+        }
       }
     }
   }
 }
-
