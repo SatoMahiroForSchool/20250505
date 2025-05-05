@@ -1,60 +1,49 @@
 let video;
-let hands;
-let canvasElement;
-let canvasCtx;
+let poseNet;
+let poses = [];
 
 function setup() {
   createCanvas(640, 480);
-  canvasElement = document.querySelector('canvas');
-  canvasCtx = canvasElement.getContext('2d');
 
   // 初始化攝影機
   video = createCapture(VIDEO);
-  video.size(640, 480);
+  video.size(width, height);
   video.hide();
 
-  // 初始化 MediaPipe Hands
-  hands = new Hands({
-    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
+  // 初始化 PoseNet
+  poseNet = ml5.poseNet(video, modelLoaded);
+  poseNet.on('pose', function (results) {
+    poses = results;
   });
-
-  hands.setOptions({
-    maxNumHands: 2, // 偵測最多 2 隻手
-    modelComplexity: 1,
-    minDetectionConfidence: 0.5,
-    minTrackingConfidence: 0.5,
-  });
-
-  hands.onResults(onResults);
-
-  // 啟用攝影機
-  const camera = new Camera(video.elt, {
-    onFrame: async () => {
-      await hands.send({ image: video.elt });
-    },
-    width: 640,
-    height: 480,
-  });
-  camera.start();
 }
 
-function onResults(results) {
-  // 清除畫布
-  canvasCtx.save();
-  canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-  canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
-
-  // 繪製手部關節點和骨架
-  if (results.multiHandLandmarks) {
-    for (const landmarks of results.multiHandLandmarks) {
-      drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, { color: '#00FF00', lineWidth: 2 });
-      drawLandmarks(canvasCtx, landmarks, { color: '#FF0000', lineWidth: 1 });
-    }
-  }
-  canvasCtx.restore();
+function modelLoaded() {
+  console.log('PoseNet 已載入');
 }
 
 function draw() {
-  // draw() 不需要額外處理，因為 MediaPipe Hands 自動處理影像和結果
+  background(0);
+  image(video, 0, 0, width, height);
+
+  // 繪製偵測到的關節點
+  drawKeypoints();
+}
+
+function drawKeypoints() {
+  for (let i = 0; i < poses.length; i++) {
+    let pose = poses[i].pose;
+
+    // 遍歷所有關節點
+    for (let j = 0; j < pose.keypoints.length; j++) {
+      let keypoint = pose.keypoints[j];
+
+      // 只繪製置信度高於 0.2 的點
+      if (keypoint.score > 0.2) {
+        fill(255, 0, 0);
+        noStroke();
+        ellipse(keypoint.position.x, keypoint.position.y, 10, 10);
+      }
+    }
+  }
 }
 
